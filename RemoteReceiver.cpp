@@ -28,11 +28,9 @@ void RemoteReceiver::init(int8_t interrupt, byte minRepeats, RemoteReceiverCallB
 	if (_interrupt >= 0) {
         //Energia doesn't have 'CHANGE'
         pinMode(_interrupt, INPUT);
-		attachInterrupt(_interrupt, RemoteReceiver::interruptHandler, RISING);
-        //This will NOT work, so the alternating flank is registered in the interup routine
-        //attachInterrupt(_interrupt, RemoteReceiver::interruptHandler, FALLING);
-	}
-    Serial.println("done init");
+		//Changed handler to use only the RISING edge as "CHANGE" is not applicable for MSP
+        attachInterrupt(_interrupt, RemoteReceiver::interruptHandler, RISING);
+    }
 }
 
 void RemoteReceiver::enable() {
@@ -52,18 +50,16 @@ void RemoteReceiver::deinit() {
 }
 
 void RemoteReceiver::interruptHandler() {
-	
-    //Energia hack to reconfig interrupt to fire on other flank
+	//Energia hack to reconfig interrupt to fire on other flank
+   
     uint8_t bit = digitalPinToBitMask(_interrupt);
-	//uint8_t port = digitalPinToPort(_interrupt);
-    P1IES ^= bit;
-    // HACK
+	P1IES ^= bit;
+    //->Energia hack
+    
     if (!_enabled) {
-      // Serial.print("not enabled!");
 		return;
 	}
-  //  Serial.println("i");
-
+    
 	static unsigned int period;				// Calculated duration of 1 period
 	static byte receivedBit;				// Contains "bit" currently receiving
 	static unsigned long receivedCode;		// Contains received code
